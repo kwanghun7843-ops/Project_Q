@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#071426">
+  <meta name="description" content="AI 윤리 문제를 탐색하고 질문을 만들어 해결하는 N-ASKIN 기반 2D RPG">
+  <title>PROJECT Q: 질문이 사라진 도시</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071426'/%3E%3Ccircle cx='30' cy='29' r='17' fill='none' stroke='%2321d9ff' stroke-width='7'/%3E%3Cpath d='M41 41l10 10' stroke='%23d6a83b' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app">
+    <section id="startScreen" class="screen start-screen">
+      <div class="start-shade"></div>
+      <div class="start-card glass">
+        <div class="eyebrow">AI ETHICS EXPLORATION RPG</div>
+        <h1>PROJECT <span>Q</span></h1>
+        <p class="subtitle">질문이 사라진 도시</p>
+        <p class="intro">발견하고, 질문하고, 아르카의 판단 시스템을 복원하세요.</p>
+
+        <form id="profileForm" class="profile-form">
+          <label>학급 참여코드<input id="classCode" maxlength="12" autocomplete="off" placeholder="예: ASK203" required></label>
+          <label>학번 또는 탐험가 번호<input id="studentNo" maxlength="12" inputmode="numeric" autocomplete="off" placeholder="예: 2301" required></label>
+          <label>탐사대원 이름<input id="agentName" maxlength="10" autocomplete="off" placeholder="예: 준서" required></label>
+          <button class="primary" type="submit">새 탐사 시작</button>
+          <button id="continueBtn" class="secondary" type="button">이어서 탐사</button>
+        </form>
+        <div class="start-actions">
+          <button class="text-btn" data-open-settings type="button">교사 연결 설정</button>
+          <button id="howBtn" class="text-btn" type="button">조작 방법</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="screen game-screen hidden" aria-label="게임 화면">
+      <header class="game-header glass">
+        <div class="area-block">
+          <span class="eyebrow">CURRENT AREA</span>
+          <strong id="areaName">폐쇄 연구소</strong>
+        </div>
+        <div id="coreBar" class="core-bar" aria-label="질문 코어 현황"></div>
+        <div class="header-actions">
+          <button id="journalBtn" class="icon-btn" aria-label="탐험일지">일지</button>
+          <button data-open-settings class="icon-btn" aria-label="교사 연결 설정">설정</button>
+          <button id="fullscreenBtn" class="icon-btn" aria-label="전체 화면">전체화면</button>
+        </div>
+      </header>
+
+      <div id="gameStage" class="game-stage">
+        <canvas id="gameCanvas" width="1280" height="720" aria-label="PROJECT Q 게임 플레이 화면"></canvas>
+        <div class="mission glass">
+          <span class="mission-label">현재 임무</span>
+          <span id="missionText">연구소의 이상 현상을 조사하세요.</span>
+        </div>
+        <button id="interactBtn" class="interact-btn hidden" type="button">조사</button>
+        <div id="mapHint" class="map-hint"></div>
+      </div>
+
+      <div class="mobile-controls" aria-label="터치 이동 버튼">
+        <div class="dpad">
+          <button data-dir="up" aria-label="위로 이동">▲</button>
+          <button data-dir="left" aria-label="왼쪽으로 이동">◀</button>
+          <button data-dir="down" aria-label="아래로 이동">▼</button>
+          <button data-dir="right" aria-label="오른쪽으로 이동">▶</button>
+        </div>
+        <button id="mobileAction" class="action-orb" aria-label="조사하기">Q</button>
+      </div>
+    </section>
+
+    <section id="endingScreen" class="screen ending-screen hidden">
+      <div class="ending-card glass">
+        <div class="ending-core">Q</div>
+        <div class="eyebrow">ARCA SYSTEM RESTORED</div>
+        <h2 id="endingTitle">질문의 설계자</h2>
+        <blockquote id="endingQuestion"></blockquote>
+        <p>아르카는 더 이상 하나의 답만으로 움직이지 않습니다.</p>
+        <div class="ending-actions">
+          <button id="printBtn" class="primary">탐험일지 출력</button>
+          <button id="returnTitleBtn" class="secondary">처음 화면</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="storyDialog" class="modal story-modal">
+    <div class="modal-shell">
+      <div id="storyArt" class="story-art"></div>
+      <div class="story-content">
+        <div id="storySpeaker" class="eyebrow">Q-BIT</div>
+        <h2 id="storyTitle"></h2>
+        <div id="storyText" class="story-text"></div>
+        <div class="modal-actions"><button id="storyNext" class="primary">계속</button></div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="inquiryDialog" class="modal inquiry-modal">
+    <form id="inquiryForm" class="modal-shell inquiry-shell" method="dialog">
+      <header class="inquiry-header">
+        <div><div class="eyebrow">N-ASKIN QUESTION LOG</div><h2 id="inquiryTitle">질문 탐험일지</h2></div>
+        <button id="closeInquiry" class="close-btn" type="button" aria-label="닫기">×</button>
+      </header>
+      <div class="stepper"><span class="active">1 발견·질문</span><span>2 탐구·연결</span><span>3 판단·확장</span></div>
+
+      <section class="form-step active" data-step="0">
+        <h3>가장 궁금한 발견을 선택하세요.</h3>
+        <div id="discoveryChoices" class="choice-list"></div>
+        <label>내가 만든 질문<textarea name="question" required maxlength="300" placeholder="왜, 어떻게, 만약 등의 표현을 활용해 질문을 만들어 보세요."></textarea></label>
+        <label>조사하기 전 예상<textarea name="prediction" required maxlength="300" placeholder="현재 생각하는 예상 답을 적어 보세요."></textarea></label>
+      </section>
+
+      <section class="form-step" data-step="1">
+        <label>조사 방법<select name="method" required><option value="">선택하세요</option><option>게임 속 단서 비교</option><option>교과서·수업 자료</option><option>인터넷 자료 검색</option><option>생성형 AI 활용 후 검증</option><option>친구와 토의</option><option>간단한 실험·계산</option></select></label>
+        <label>찾은 자료와 근거<textarea name="evidence" required maxlength="600" placeholder="출처나 게임 속 단서를 구체적으로 적어 보세요."></textarea></label>
+        <label>내가 찾은 답<textarea name="answer" required maxlength="600" placeholder="질문에 대한 답을 근거와 연결하여 정리하세요."></textarea></label>
+      </section>
+
+      <section class="form-step" data-step="2">
+        <label>영향을 받는 사람<textarea name="stakeholders" required maxlength="300" placeholder="누가 이 AI의 판단에 영향을 받을까요?"></textarea></label>
+        <div class="split-fields"><label>기대되는 이익<textarea name="benefit" required maxlength="300"></textarea></label><label>발생 가능한 위험<textarea name="risk" required maxlength="300"></textarea></label></div>
+        <label>나의 판단과 해결 원칙<textarea name="decision" required maxlength="500" placeholder="어떤 결정을 내렸으며, 그 이유는 무엇인가요?"></textarea></label>
+        <label>새롭게 생긴 질문<textarea name="nextQuestion" required maxlength="300" placeholder="아직 해결되지 않았거나 더 알아보고 싶은 질문을 적으세요."></textarea></label>
+        <div id="principleFields" class="principle-fields hidden">
+          <h3>오라클이 지켜야 할 AI 시민 원칙</h3>
+          <input name="principle1" maxlength="160" placeholder="원칙 1: AI는 중요한 결정을 할 때…">
+          <input name="principle2" maxlength="160" placeholder="원칙 2: AI는 사용자의 정보를…">
+          <input name="principle3" maxlength="160" placeholder="원칙 3: 문제가 생기면…">
+        </div>
+      </section>
+
+      <footer class="modal-actions between">
+        <button id="prevStep" class="secondary hidden" type="button">이전</button>
+        <span id="saveState" class="save-state">자동 저장 준비</span>
+        <button id="nextStep" class="primary" type="button">다음</button>
+        <button id="completeInquiry" class="primary hidden" type="submit">탐구 완료</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="journalDialog" class="modal journal-modal">
+    <div class="modal-shell journal-shell">
+      <header class="inquiry-header"><div><div class="eyebrow">EXPLORATION LOG</div><h2>나의 질문 탐험일지</h2></div><button class="close-btn" data-close-dialog="journalDialog">×</button></header>
+      <div id="journalContent" class="journal-content"></div>
+      <footer class="modal-actions"><button id="journalPrint" class="secondary">인쇄·PDF 저장</button><button class="primary" data-close-dialog="journalDialog">게임으로 돌아가기</button></footer>
+    </div>
+  </dialog>
+
+  <dialog id="settingsDialog" class="modal settings-modal">
+    <form id="settingsForm" class="modal-shell settings-shell" method="dialog">
+      <header class="inquiry-header"><div><div class="eyebrow">TEACHER CONNECTION</div><h2>교사 기록함 연결</h2></div><button class="close-btn" type="button" data-close-dialog="settingsDialog">×</button></header>
+      <p>교사가 복사한 기록용 스프레드시트의 Apps Script 웹 앱 주소를 입력하면 학생의 탐험 기록이 해당 시트로 전송됩니다. 입력하지 않아도 이 기기에는 자동 저장됩니다.</p>
+      <label>GAS 웹 앱 주소<input id="gasEndpoint" type="url" placeholder="https://script.google.com/macros/s/.../exec"></label>
+      <label>교사 표시 이름<input id="teacherName" maxlength="30" placeholder="예: 정보교사"></label>
+      <div id="connectionState" class="connection-state">현재 로컬 저장 모드</div>
+      <footer class="modal-actions"><button id="testConnection" class="secondary" type="button">연결 테스트</button><button class="primary" type="submit">설정 저장</button></footer>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="game.js"></script>
+</body>
+</html>
